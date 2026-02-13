@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow - Project Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Google API & Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <h1 class="logo">TaskFlow</h1>
+        <button class="quick-add-btn" id="quickAddBtn" aria-label="Quick add">+</button>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1 class="logo">TaskFlow</h1>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="#" class="nav-link active" data-view="dashboard">
+                    <span class="icon">📊</span> Dashboard
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="projects">
+                    <span class="icon">📁</span> Projects
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="tasks">
+                    <span class="icon">✓</span> My Tasks
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="gantt">
+                    <span class="icon">📅</span> Timeline
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="timesheets">
+                    <span class="icon">⏱️</span> Timesheets
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="archive">
+                    <span class="icon">📦</span> Archive
+                </a></li>
+            <li><a href="#" class="nav-link" data-view="settings">
+                    <span class="icon">⚙️</span> Settings
+                </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <button id="themeToggle" class="btn btn-secondary"
+                style="width: 100%; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span id="themeIcon">🌙</span> <span id="themeText">Dark Mode</span>
+            </button>
+            <button id="googleLoginBtn" class="btn btn-primary" style="width: 100%;">Login with Google</button>
+            <button id="googleLogoutBtn" class="btn btn-secondary" style="width: 100%; display: none;">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Dashboard View -->
+        <div class="view active" id="dashboardView">
+            <div class="view-header">
+                <div style="display: flex; flex-direction: column;">
+                    <h2>Dashboard</h2>
+                    <div id="connectionStatus" class="connection-status offline">
+                        <span class="status-dot offline"></span> Demo Mode (Offline)
+                        <button id="dashboardConnectBtn" class="btn btn-secondary"
+                            style="padding: 2px 8px; font-size: 10px; margin-left: 10px;">Connect Now</button>
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="newProjectBtn">+ New Project</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <input type="text" placeholder="🔍 Search tasks, projects..." id="searchInput">
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+                <div class="stat-card stat-warning">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Overdue Tasks</div>
+                </div>
+                <div class="stat-card stat-info">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Due This Week</div>
+                </div>
+                <div class="stat-card stat-success">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Analytics -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+                <!-- Task Distribution Donut -->
+                <section class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3>📊 Task Distribution</h3>
+                    </div>
+                    <div class="card-body"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                        <div id="statusDonut" class="donut-chart"
+                            style="width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(var(--gray-200) 0%); position: relative; display: flex; align-items: center; justify-content: center;">
+                            <div
+                                style="position: absolute; width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <span id="donutTotal"
+                                    style="font-size: 24px; font-weight: 700; color: var(--gray-800);">0</span>
+                                <span
+                                    style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Tasks</span>
+                            </div>
+                        </div>
+                        <div id="donutLegend"
+                            style="margin-top: 20px; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Project Progress -->
+                <section class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3>📈 Project Progress</h3>
+                    </div>
+                    <div class="card-body" id="dashboardProjectList"
+                        style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Top projects by progress will appear here -->
+                    </div>
+                </section>
+
+                <!-- Team Workload -->
+                <section class="card" style="height: 100%;">
+                    <div class="card-header">
+                        <h3>👥 Team Workload</h3>
+                    </div>
+                    <div class="card-body" id="teamWorkloadList"
+                        style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Team task counters -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Attention Needed -->
+            <section class="card">
+                <div class="card-header collapsible" data-target="attentionList">
+                    <h3>⚠️ Attention Needed <span class="badge">0</span></h3>
+                    <span class="chevron">▼</span>
+                </div>
+                <div class="card-body" id="attentionList">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Projects View -->
+        <div class="view" id="projectsView">
+            <div class="view-header">
+                <h2>All Projects</h2>
+                <button class="btn btn-primary" id="newProjectBtn2">+ New Project</button>
+            </div>
+            <div class="projects-grid" id="projectsGrid">
+                <!-- Projects grid will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Tasks View -->
+        <div class="view" id="tasksView">
+            <div class="view-header">
+                <h2>My Tasks</h2>
+                <button class="btn btn-primary" id="newTaskBtn">+ New Task</button>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <!-- Options populated dynamically by updateDropdowns() -->
+                </select>
+                <select class="filter-select" id="personFilter">
+                    <option value="">All People</option>
+                    <option value="rocky">Rocky Swartz</option>
+                    <option value="sarah">Sarah Johnson</option>
+                </select>
+                <select class="filter-select" id="typeFilter">
+                    <option value="">All Types</option>
+                    <option value="call">Client Call</option>
+                    <option value="design">Design Work</option>
+                    <option value="write">Write Proposal</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 16px; display: flex; gap: 8px;">
+                <button class="btn btn-secondary active-view" id="listViewBtn" onclick="setTaskView('list')">📄
+                    List</button>
+                <button class="btn btn-secondary" id="boardViewBtn" onclick="setTaskView('board')">📋 Board</button>
+            </div>
+
+            <div class="tasks-table" id="tasksTable">
+                <!-- Tasks table will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Archive View -->
+        <div class="view" id="archiveView">
+            <div class="view-header">
+                <h2>📦 Archived Projects</h2>
+            </div>
+            <div class="archive-list" id="archiveList">
+                <!-- Archived projects will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div class="view" id="settingsView">
+            <div class="view-header">
+                <h2>Settings</h2>
+            </div>
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="action-types">Action Types</button>
+                <button class="tab-btn" data-tab="status-options">Status Options</button>
+                <button class="tab-btn" data-tab="people">People</button>
+                <button class="tab-btn" data-tab="project-types">Project Types</button>
+            </div>
+            <div class="settings-content" id="settingsContent">
+                <!-- Settings content will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Gantt View -->
+        <div class="view" id="ganttView">
+            <div class="view-header">
+                <h2>📅 Project Timeline (Gantt)</h2>
+                <div class="view-actions" style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn btn-secondary" onclick="scrollGantt('left')"
+                            style="padding: 8px 12px; font-size: 16px;" title="Scroll Left">◀</button>
+                        <button class="btn btn-secondary" onclick="scrollGantt('right')"
+                            style="padding: 8px 12px; font-size: 16px;" title="Scroll Right">▶</button>
+                    </div>
+                    <select id="ganttProjectFilter" onchange="loadGantt()" class="form-select"
+                        style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-main);">
+                        <option value="">All Projects</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card" style="overflow: hidden;">
+                <div id="ganttChartContainer" style="overflow-x: auto; padding-bottom: 20px;">
+                    <!-- Gantt chart will be rendered here -->
+                </div>
+            </div>
+        </div>
+        <!-- Timesheets View -->
+        <div class="view" id="timesheetsView">
+            <div class="view-header">
+                <h2>⏱️ Time Tracking & Logs</h2>
+                <div class="view-actions">
+                    <button class="btn btn-primary" onclick="openLogTimeModal()">+ Log Time</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="margin-bottom: 24px;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalLoggedHours">0h</div>
+                    <div class="stat-label">Total Hours (This Week)</div>
+                </div>
+                <div class="stat-card stat-success">
+                    <div class="stat-value" id="totalBillableHours">0h</div>
+                    <div class="stat-label">Billable Hours</div>
+                </div>
+                <div class="stat-card stat-info">
+                    <div class="stat-value" id="totalNonBillableHours">0h</div>
+                    <div class="stat-label">Non-Billable</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="view-header" style="border-bottom: 1px solid var(--border-color); padding: 15px 20px;">
+                    <h3 style="margin: 0;">Recent Logs</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="timesheetPersonFilter" class="form-select" onchange="loadTimesheets()">
+                            <option value="">All People</option>
+                        </select>
+                        <input type="date" id="timesheetDateFilter" class="form-control" onchange="loadTimesheets()">
+                    </div>
+                </div>
+                <div id="timesheetsContainer" style="min-height: 200px;">
+                    <!-- Timesheets will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Quick Add Modal -->
+    <div class="modal" id="quickAddModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Quick Add</h3>
+                <button class="modal-close" id="closeQuickAdd">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="task">Task</button>
+                    <button class="tab-btn" data-tab="project">Project</button>
+                </div>
+
+                <div class="tab-content active" id="taskTab">
+                    <form id="quickTaskForm">
+                        <div class="form-group">
+                            <label for="taskDescription">Task Description *</label>
+                            <input type="text" id="taskDescription" placeholder="Call client re: proposal" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskProject">Project *</label>
+                            <select id="taskProject" required>
+                                <option value="">Select project...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskType">Action Type *</label>
+                            <select id="taskType" required>
+                                <option value="">Select type...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskAssignee">Assigned To *</label>
+                            <select id="taskAssignee" required>
+                                <option value="">Select person...</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="taskStartDate">Start Date</label>
+                                <input type="date" id="taskStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDeadline">Deadline</label>
+                                <input type="date" id="taskDeadline">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <div class="priority-group">
+                                <label class="radio-label"><input type="radio" name="priority" value="low"> Low</label>
+                                <label class="radio-label"><input type="radio" name="priority" value="medium" checked>
+                                    Medium</label>
+                                <label class="radio-label"><input type="radio" name="priority" value="high">
+                                    High</label>
+                                <label class="radio-label"><input type="radio" name="priority" value="urgent">
+                                    Urgent</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskInstructions">Task Instructions</label>
+                            <textarea id="taskInstructions" rows="3"
+                                placeholder="Detail any specific instructions or requirements for this task..."></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Add Task</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="tab-content" id="projectTab">
+                    <form id="quickProjectForm">
+                        <div class="form-group">
+                            <label for="projectName" style="font-weight: 600;">Project Name *</label>
+                            <input type="text" id="projectName" placeholder="e.g., Website Redesign" required
+                                style="font-size: 1.1em; padding: 12px;">
+                        </div>
+                        <div class="form-group">
+                            <label for="projectDescription">Scope / Description</label>
+                            <textarea id="projectDescription" rows="3"
+                                placeholder="High-level goals and scope..."></textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                            <div class="form-group">
+                                <label for="projectTypeSelect">Category</label>
+                                <select id="projectTypeSelect"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="projectHours">Estimated Hours</label>
+                                <input type="number" id="projectHours" placeholder="e.g., 40">
+                            </div>
+                        </div>
+                        <div class="form-group"
+                            style="background: var(--gray-50); padding: 16px; border-radius: 8px; border: 1px solid var(--gray-200); margin-top: 8px;">
+                            <label for="projectInstructions" style="color: var(--primary); font-weight: 600;">Project
+                                Instructions / Scope</label>
+                            <textarea id="projectInstructions" rows="3"
+                                placeholder="High-level project instructions / scope..."
+                                style="background: white;"></textarea>
+                        </div>
+                        <div class="modal-footer"
+                            style="padding-top: 20px; border-top: 1px solid var(--gray-200); margin-top: 16px;">
+                            <button type="submit" class="btn btn-primary"
+                                style="width: 100%; padding: 12px; font-weight: 600; font-size: 1em;">🚀 Create
+                                Project</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- FAB Button (Mobile) -->
+    <!-- Edit Task Modal -->
+    <div class="modal" id="editTaskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Task</h3>
+                <button class="modal-close" id="closeEditTask">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" id="editTaskId">
+                    <div class="form-group">
+                        <label for="editTaskDescription">Task Description *</label>
+                        <input type="text" id="editTaskDescription" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editTaskProject">Project (Read Only)</label>
+                            <select id="editTaskProject" disabled style="background: var(--gray-50);"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTaskType">Action Type (Read Only)</label>
+                            <select id="editTaskType" disabled style="background: var(--gray-50);"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editTaskAssignee">Assignee <span id="assigneeHistoryIcon"></span></label>
+                            <select id="editTaskAssignee"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTaskStatus">Status <span id="statusHistoryIcon"></span></label>
+                            <select id="editTaskStatus" onchange="handleStatusChange(this.value)"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="editTaskTimeRow" style="display: none;">
+                        <div class="form-group">
+                            <label for="editTaskTimeStarted">Time Started *</label>
+                            <input type="time" id="editTaskTimeStarted">
+                        </div>
+                        <div class="form-group">
+                            <label for="editTaskTimeEnded">Time Ended</label>
+                            <input type="time" id="editTaskTimeEnded">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editTaskStartDate">Start Date</label>
+                            <input type="date" id="editTaskStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="editTaskDeadline">Deadline <span id="deadlineHistoryIcon"></span></label>
+                            <input type="date" id="editTaskDeadline">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editTaskInstructions">Instructions</label>
+                        <textarea id="editTaskInstructions" rows="4"
+                            placeholder="Enter detailed formatted instructions..."></textarea>
+                        <div id="instructionsPreview" class="instructions-preview"
+                            style="display: none; margin-top: 8px;"></div>
+                    </div>
+
+                    <!-- SubTasks Section -->
+                    <div id="subTasksSection" style="margin-bottom: 24px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <label style="font-weight: 700; font-size: 14px; color: var(--gray-700);">Sub-tasks</label>
+                            <button type="button" class="btn btn-secondary btn-add-subtask"
+                                onclick="toggleSubTaskForm()">+ Add Sub-task</button>
+                        </div>
+                        <div id="subTaskAddForm"
+                            style="display: none; background: var(--gray-50); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--gray-200);">
+                            <div class="form-group" style="margin-bottom: 8px;">
+                                <input type="text" id="newSubTaskDesc" placeholder="What needs to be done?"
+                                    style="padding: 8px;">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <select id="newSubTaskType" style="padding: 4px; font-size: 12px; flex: 1;"></select>
+                                <button type="button" class="btn btn-primary"
+                                    style="padding: 4px 12px; font-size: 12px;" onclick="addSubTask()">Save</button>
+                            </div>
+                        </div>
+                        <div id="subTasksList" class="subtasks-list">
+                            <!-- Subtasks will be listed here -->
+                        </div>
+                    </div>
+
+                    <!-- Attachments Section -->
+                    <div id="attachmentsSection" style="margin-bottom: 24px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <label
+                                style="font-weight: 700; font-size: 14px; color: var(--gray-700);">Attachments</label>
+                            <button type="button" class="btn btn-secondary btn-add-subtask"
+                                onclick="toggleAttachmentForm()">+ Add Link</button>
+                        </div>
+                        <div id="taskAttachmentForm"
+                            style="display: none; background: var(--gray-50); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--gray-200);">
+                            <div style="display: grid; grid-template-columns: 100px 1fr; gap: 8px; margin-bottom: 8px;">
+                                <select id="newTaskAttType"
+                                    style="padding: 8px; border-radius: 6px; border: 1px solid var(--gray-300);"
+                                    onchange="updateAttachmentMode()">
+                                    <option value="url">Web Link</option>
+                                    <option value="gdrive">Google Drive</option>
+                                </select>
+                                <input type="text" id="newTaskAttTitle" placeholder="Title (e.g., Specs Document)"
+                                    style="padding: 8px; border-radius: 6px; border: 1px solid var(--gray-300);">
+                            </div>
+                            <div id="urlInputContainer" style="display: flex; gap: 8px;">
+                                <input type="url" id="newTaskAttUrl" placeholder="URL (https://...)"
+                                    style="padding: 8px; flex: 1; border-radius: 6px; border: 1px solid var(--gray-300);">
+                                <button type="button" class="btn btn-primary"
+                                    style="padding: 4px 12px; font-size: 12px;"
+                                    onclick="addTaskAttachment()">Add</button>
+                            </div>
+                            <div id="driveInputContainer" style="display: none; flex-direction: column; gap: 8px;">
+                                <button type="button" class="btn btn-secondary"
+                                    style="width: 100%; border: 1px dashed var(--gray-400); background: white;"
+                                    onclick="showPicker()">
+                                    📁 Select from Google Drive
+                                </button>
+                                <button type="button" class="btn btn-primary" style="margin-top: 4px;"
+                                    onclick="addTaskAttachment()">Confirm Drive Selection</button>
+                            </div>
+                        </div>
+                        <div id="attachmentsList" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Attachments will be listed here -->
+                        </div>
+                    </div>
+
+                    <div id="deadlineHistorySection"
+                        style="margin-bottom: 20px; font-size: 13px; color: var(--gray-500); display: none;">
+                        <label style="font-weight: 600; margin-bottom: 5px; display: block;">Deadline History</label>
+                        <ul id="deadlineHistoryList" style="list-style: none; padding-left: 0; margin: 0;"></ul>
+                    </div>
+
+                    <div class="modal-footer"
+                        style="flex-wrap: wrap; gap: 8px; border-top: 1px solid var(--gray-100); padding-top: 20px;">
+                        <button type="button" id="taskNotesButton" class="btn btn-secondary"
+                            onclick="openNotesModal(document.getElementById('editTaskId').value, 'task')">📋
+                            Notes</button>
+                        <div style="flex: 1;"></div>
+                        <button type="button" class="btn btn-secondary" id="cancelEditTask">Cancel</button>
+                        <button type="button" class="btn btn-warning" id="archiveTaskBtn" onclick="archiveTask()"
+                            style="display: none;">📦 Archive</button>
+                        <button type="submit" class="btn btn-primary">Update Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Project Modal -->
+    <div class="modal" id="editProjectModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <div>
+                    <h3>Edit Project</h3>
+                    <small id="editProjectSubtitle" style="color: var(--gray-500);"></small>
+                </div>
+                <button class="modal-close" id="closeEditProject">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editProjectForm">
+                    <input type="hidden" id="editProjectId">
+
+                    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px;">
+                        <!-- Left Column: Primary Info -->
+                        <div>
+                            <div class="form-group">
+                                <label for="editProjectName">Project Name *</label>
+                                <input type="text" id="editProjectName" required
+                                    style="font-size: 1.1em; font-weight: 600;">
+                            </div>
+                            <div class="form-group">
+                                <label for="editProjectDescription">Project Description</label>
+                                <textarea id="editProjectDescription" rows="5"
+                                    placeholder="Describe the scope and objectives..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Metadata & Status -->
+                        <div
+                            style="background: var(--gray-50); padding: 20px; border-radius: 12px; border: 1px solid var(--gray-200);">
+                            <div class="form-group">
+                                <label for="editProjectStatus">Current Status</label>
+                                <select id="editProjectStatus" style="font-weight: 600;">
+                                    <option value="active">Active</option>
+                                    <option value="on-hold">On Hold</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProjectType">Project Category</label>
+                                <select id="editProjectType"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProjectHours">Expected Hours</label>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="number" id="editProjectHours" min="0" style="width: 100px;">
+                                    <span style="color: var(--gray-500); font-size: 13px;">hrs</span>
+                                </div>
+                            </div>
+                            <div
+                                style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gray-200); font-size: 12px; color: var(--gray-500);">
+                                <div style="margin-bottom: 8px;">Created: <span id="displayProjectCreatedDate"
+                                        style="color: var(--gray-900); font-weight: 600;">-</span></div>
+                                <div id="displayProjectArchivedContainer" style="display: none;">
+                                    Archived: <span id="displayProjectArchivedDate"
+                                        style="color: var(--gray-900); font-weight: 600;">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer"
+                        style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-200); flex-wrap: wrap; gap: 12px;">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="openNotesModal(document.getElementById('editProjectId').value, 'project')"
+                            style="display: flex; align-items: center; gap: 8px;">
+                            📋 Project History & Notes
+                        </button>
+                        <div style="flex: 1;"></div>
+                        <button type="button" class="btn btn-secondary" id="cancelEditProject">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="min-width: 120px;">Save Project</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal" id="notesModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <div>
+                    <h3 id="notesModalTitle">Notes</h3>
+                    <small id="notesModalSubtitle" style="color: var(--gray-500);"></small>
+                </div>
+                <button class="modal-close" id="closeNotes">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <!-- Notes History -->
+                <div id="notesHistory"
+                    style="max-height: 400px; overflow-y: auto; padding: 20px; background: var(--gray-50);">
+                    <!-- Notes populated dynamically -->
+                </div>
+
+                <!-- Add Note Form -->
+                <div style="padding: 20px; border-top: 1px solid var(--gray-200);">
+                    <form id="addNoteForm">
+                        <div class="form-group">
+                            <label for="noteText">New Note</label>
+                            <textarea id="noteText" placeholder="Type your update here..." required
+                                style="width: 100%; min-height: 80px;"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 12px; align-items: flex-end;">
+                            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                <label for="notePerson">Commenter</label>
+                                <select id="notePerson" required>
+                                    <option value="">Select person...</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post Note</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Time Modal -->
+    <div class="modal" id="logTimeModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>⏱️ Log Time Worked</h3>
+                <button class="modal-close" id="closeLogTime">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="logTimeForm">
+                    <div class="form-group">
+                        <label for="logTask">Select Task *</label>
+                        <select id="logTask" required>
+                            <option value="">Choose a task...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logPerson">Person *</label>
+                        <select id="logPerson" required>
+                            <option value="">Select person...</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label for="logDate">Date *</label>
+                            <input type="date" id="logDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="logHours">Hours Spent *</label>
+                            <input type="number" id="logHours" step="0.25" min="0.25" placeholder="e.g. 1.5" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logNotes">What did you work on? *</label>
+                        <textarea id="logNotes" rows="3" placeholder="Description of work performed..."
+                            required></textarea>
+                    </div>
+
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="logBillable" checked>
+                            <span>Billable Work</span>
+                        </label>
+                        <div id="dailyTimeContext" style="font-size: 11px; color: var(--text-muted); font-weight: 600;">
+                            Total Today: 0h
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 0; border: none; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" id="cancelLogTime">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Log</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab" id="fabBtn" aria-label="Quick add">+</button>
+
+    <!-- Load configuration first -->
+    <script src="config.public.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
