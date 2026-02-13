@@ -760,8 +760,9 @@
 
     <button class="fab" id="fabBtn" aria-label="Quick add">+</button>
 
-    <!-- Load configuration first -->
+    <!-- Load configuration: public fallback first, then local override -->
     <script src="config.public.js"></script>
+    <script src="config.js"></script>
     <script src="app.js"></script>
 </body>
 

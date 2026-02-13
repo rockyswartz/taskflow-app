@@ -1,7 +1,7 @@
 // Configuration file for Google Sheets API
 // IMPORTANT: This is a PUBLIC DEMO config - replace with your own credentials
 
-const CONFIG = {
+var CONFIG = {
     GOOGLE_API_KEY: 'YOUR_API_KEY_HERE',
     GOOGLE_CLIENT_ID: 'YOUR_CLIENT_ID_HERE',
     GOOGLE_SPREADSHEET_ID: 'YOUR_SPREADSHEET_ID_HERE',
